@@ -21,19 +21,8 @@ export default function Dashboard() {
     to: endOfDay(new Date()),
   });
 
-  const { dashboardMetrics } = useData();
-
-  const metrics = dashboardMetrics || {
-    totalSelling: 0,
-    totalPurchase: 0,
-    totalCashReceived: 0,
-    totalOnlineReceived: 0,
-    topSellingProduct: null,
-  };
-
-  const lowStockProducts = useMemo(() => {
-    return getLowStockProducts(products) || [];
-  }, [products]);
+  const lowStockProducts = useMemo(() => getLowStockProducts(products), [products]);
+  const metrics = useMemo(() => getDashboardMetrics(sales, purchases, products, dateRange), [sales, purchases, products, dateRange]);
 
   const setQuickRange = (days: number) => {
     setDateRange({

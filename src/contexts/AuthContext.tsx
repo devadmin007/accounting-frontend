@@ -71,25 +71,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const login = async (username: string, password: string) => {
+  const login = async (username: string, password: string): Promise<{ success: boolean; message?: string }> => {
     try {
       const response = await authAPI.login(username, password);
-      const { user, token } = response.data;
+      const { user: userData, token } = response.data;
 
       localStorage.setItem("token", token);
 
       setUser({
-        id: user.id,
-        username: user.username,
+        id: userData.id,
+        username: userData.username,
         password: "",
-        role: user.role as "admin" | "staff",
-        createdAt: new Date().toISOString(),
+        role: userData.role as "admin" | "staff",
+        createdAt: userData.createdAt || new Date().toISOString(),
       });
 
       setIsAuthenticated(true);
 
       return { success: true };
     } catch (error) {
+      console.error("Login failed:", error);
       return { success: false, message: "Invalid credentials" };
     }
   };
@@ -104,10 +105,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   if (isLoading) {
     return (
-      <div className='min-h-screen flex items-center justify-center'>
-        <div className='text-center'>
-          <div className='animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto'></div>
-          <p className='mt-4 text-muted-foreground'>Loading...</p>
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-4 text-muted-foreground">Loading...</p>
         </div>
       </div>
     );

@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Search, Edit, Trash2, PackagePlus } from 'lucide-react';
+import { Plus, Search, Edit, Trash2, PackagePlus, Trash } from 'lucide-react';
 import { formatCurrency, formatDate, exportToCSV } from '@/lib/utils-data';
 import {
   Table,
@@ -28,14 +28,16 @@ import { useAuth } from '@/contexts/AuthContext';
 
 export default function Products() {
   const navigate = useNavigate();
-  const { products, updateProduct, addStockHistory } = useData();
+  const { products, updateProduct, addStockHistory, deleteProduct } = useData();
   const { user } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedProduct, setSelectedProduct] = useState<string | null>(null);
   const [stockToAdd, setStockToAdd] = useState('');
   const [stockNotes, setStockNotes] = useState('');
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [deleteProductId, setDeleteProductId] = useState<string | null>(null);
 
-  const filteredProducts = products.filter(p => 
+  const filteredProducts = products.filter(p =>
     p.isActive && (
       p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       p.make.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -46,19 +48,19 @@ export default function Products() {
   const handleAddStock = () => {
     console.log('47===>')
     const product = products.find(p => p.id === selectedProduct);
-    console.log('49===>',product)
+    console.log('49===>', product)
     if (!product || !stockToAdd) return;
-    
+
     const quantity = parseInt(stockToAdd);
-    console.log('49===>',quantity)
+    console.log('49===>', quantity)
     if (isNaN(quantity) || quantity <= 0) return;
-    
+
     updateProduct({
       ...product,
       stockQuantity: product.stockQuantity + quantity,
       updatedAt: new Date().toISOString(),
     });
-    
+
     addStockHistory({
       id: Date.now().toString(),
       productId: product.id,
@@ -72,6 +74,16 @@ export default function Products() {
     setStockToAdd('');
     setStockNotes('');
   };
+
+  const handleDeleteProduct = () => {
+    if (!deleteProductId) return;
+
+    deleteProduct(deleteProductId);
+
+    setShowDeleteDialog(false);
+    setDeleteProductId(null);
+  };
+
 
   const handleExport = () => {
     const exportData = filteredProducts.map(p => ({
@@ -172,6 +184,16 @@ export default function Products() {
                         >
                           <Edit className="h-4 w-4" />
                         </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            setDeleteProductId(product.id);
+                            setShowDeleteDialog(true);
+                          }}
+                        >
+                          <Trash className="h-4 w-4" />
+                        </Button>
                       </div>
                     </TableCell>
                   </TableRow>
@@ -219,6 +241,37 @@ export default function Products() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Product</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete this product? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowDeleteDialog(false);
+                setDeleteProductId(null);
+              }}
+            >
+              Cancel
+            </Button>
+
+            <Button
+              variant="destructive"
+              onClick={handleDeleteProduct}
+            >
+              Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
     </div>
   );
 }

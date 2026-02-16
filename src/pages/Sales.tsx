@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Search, Eye, Download } from 'lucide-react';
+import { Plus, Search, Eye, Download, Edit } from 'lucide-react';
 import { formatCurrency, formatDateTime, exportToCSV } from '@/lib/utils-data';
 import {
   Table,
@@ -31,13 +31,13 @@ export default function Sales() {
   const [statusFilter, setStatusFilter] = useState<string>('all');
 
   const filteredSales = sales.filter(sale => {
-    const matchesSearch = 
+    const matchesSearch =
       sale.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       sale.invoiceNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
       sale.customerMobile.includes(searchTerm);
-    
+
     const matchesStatus = statusFilter === 'all' || sale.status === statusFilter;
-    
+
     return matchesSearch && matchesStatus;
   }).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
@@ -145,8 +145,8 @@ export default function Sales() {
                       <Badge
                         variant={
                           sale.status === 'PAID' ? 'default' :
-                          sale.status === 'PARTIAL' ? 'secondary' :
-                          'destructive'
+                            sale.status === 'PARTIAL' ? 'secondary' :
+                              'destructive'
                         }
                       >
                         {sale.status}
@@ -155,6 +155,13 @@ export default function Sales() {
                     <TableCell>{formatDateTime(sale.createdAt)}</TableCell>
                     <TableCell>
                       <div className="flex gap-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => navigate(`/sales/edit/${sale.id}`)}
+                        >
+                          <Edit className="h-4 w-4 text-blue-600" />
+                        </Button>
                         <Button
                           variant="ghost"
                           size="sm"

@@ -5,7 +5,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowLeft, Plus, Trash2 } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, Check, ChevronsUpDown } from 'lucide-react';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
 import {
   Select,
   SelectContent,
@@ -18,6 +24,14 @@ import { Separator } from '@/components/ui/separator';
 import type { Sale, SaleItem } from '@/lib/types';
 import { generateInvoiceNumber, formatCurrency } from '@/lib/utils-data';
 import { generateInvoicePDF } from '@/lib/pdf-generator';
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+} from "@/components/ui/command";
+
 
 export default function CreateBill() {
   const navigate = useNavigate();
@@ -167,21 +181,51 @@ export default function CreateBill() {
               <div key={index} className="flex gap-4 items-end">
                 <div className="flex-1 space-y-2">
                   <Label>Product</Label>
-                  <Select
-                    value={item.productId}
-                    onValueChange={(value) => updateItem(index, 'productId', value)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select product" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {activeProducts.map(product => (
-                        <SelectItem key={product.id} value={product.id}>
-                          {product.name} - Stock: {product.stockQuantity}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        role="combobox"
+                        className={cn(
+                          "w-full justify-between",
+                          !item.productId && "text-muted-foreground"
+                        )}
+                      >
+                        {item.productId
+                          ? products.find((product) => product.id === item.productId)?.name
+                          : "Select product"}
+                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-[400px] p-0">
+                      <Command>
+                        <CommandInput placeholder="Search product..." />
+                        <CommandEmpty>No product found.</CommandEmpty>
+                        <CommandGroup>
+                          {activeProducts.map((product) => (
+                            <CommandItem
+                              key={product.id}
+                              value={`${product.name} ${product.id} ${product.stockQuantity}`}
+                              onSelect={() => {
+                                updateItem(index, "productId", product.id);
+                              }}
+                            >
+                              <Check
+                                className={cn(
+                                  "mr-2 h-4 w-4",
+                                  product.id === item.productId
+                                    ? "opacity-100"
+                                    : "opacity-0"
+                                )}
+                              />
+                              {product.name} - Stock: {product.stockQuantity}
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
+
                 </div>
                 <div className="w-24 space-y-2">
                   <Label>Quantity</Label>
@@ -288,11 +332,11 @@ export default function CreateBill() {
             )}
 
             {(() => {
-              const received = paymentMode === 'MIXED' 
+              const received = paymentMode === 'MIXED'
                 ? (parseFloat(cashAmount) || 0) + (parseFloat(onlineAmount) || 0)
                 : parseFloat(amountReceived) || 0;
               const pending = totalAmount - received;
-              
+
               return pending > 0 && (
                 <div className="space-y-2">
                   <Label htmlFor="dueDate">Due Date</Label>
