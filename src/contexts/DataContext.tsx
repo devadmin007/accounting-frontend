@@ -11,21 +11,25 @@ interface DataContextType {
   purchases: Purchase[];
   dashboardMetrics: DashboardMetrics | null;
   isLoading: boolean;
-  
+
   // Product methods
   fetchProducts: () => Promise<void>;
   addProduct: (product: Omit<Product, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>;
   updateProduct: (id: string, product: Partial<Product>) => Promise<void>;
   deleteProduct: (id: string) => Promise<void>;
-  
+
   // Sales methods
   fetchSales: (filters?: { status?: string; from?: string; to?: string }) => Promise<void>;
   addSale: (sale: Omit<Sale, 'id' | 'createdAt'>) => Promise<void>;
-  
+  updateSale: (id: string, sale: Partial<Sale>) => Promise<void>;
+  getSaleById: (id: string) => Promise<Sale>;
+
   // Purchase methods
   fetchPurchases: (filters?: { status?: string; from?: string; to?: string }) => Promise<void>;
   addPurchase: (purchase: Omit<Purchase, 'id' | 'createdAt'>) => Promise<void>;
-  
+  updatePurchase: (id: string, purchase: Partial<Purchase>) => Promise<void>;
+  getPurchaseById: (id: string) => Promise<Purchase>;
+
   // Dashboard methods
   fetchDashboardMetrics: (filters?: { from?: string; to?: string }) => Promise<void>;
 }
@@ -85,7 +89,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const response = await productAPI.create(product as Record<string, unknown>);
       const newProduct = toCamelCase(response.data.data || response.data) as Product;
       setProducts([...products, newProduct]);
-      toast.success('Product added successfully');
+      toast.success('Product added successfully', { position: 'top-right' });
     } catch (error) {
       const axiosError = error as AxiosError<{ error?: string }>;
       console.error('Failed to add product:', axiosError);
@@ -99,7 +103,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const response = await productAPI.update(product.id, product as Record<string, unknown>);
       const updatedProduct = toCamelCase(response.data.data || response.data) as Product;
       setProducts(products.map((p) => (p.id === product.id ? updatedProduct : p)));
-      toast.success('Product updated successfully');
+      toast.success('Product updated successfully', { position: 'top-right' });
     } catch (error) {
       const axiosError = error as AxiosError<{ error?: string }>;
       console.error('Failed to update product:', axiosError);
@@ -112,7 +116,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       await productAPI.delete(id);
       setProducts(products.filter((p) => p.id !== id));
-      toast.success('Product deleted successfully');
+      toast.success('Product deleted successfully', { position: 'top-right' });
     } catch (error) {
       const axiosError = error as AxiosError<{ error?: string }>;
       console.error('Failed to delete product:', axiosError);
@@ -129,9 +133,9 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const salesData = toCamelCase(response.data.data || response.data) as Sale[];
       setSales(salesData);
     } catch (error) {
-      const axiosError = error as AxiosError;
+      const axiosError: any = error as AxiosError;
       console.error('Failed to fetch sales:', axiosError);
-      toast.error('Failed to load sales');
+      toast.error(`Failed to load sales ${axiosError.response?.data?.error}`, { position: 'top-right' });
     } finally {
       setIsLoading(false);
     }
@@ -142,15 +146,45 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const response = await salesAPI.create(sale as Record<string, unknown>);
       const newSale = toCamelCase(response.data.data || response.data) as Sale;
       setSales([newSale, ...sales]);
-      
+
       // Refresh products to update stock
       await fetchProducts();
-      
+
       toast.success('Sale created successfully');
     } catch (error) {
       const axiosError = error as AxiosError<{ error?: string }>;
       console.error('Failed to add sale:', axiosError);
       toast.error(axiosError.response?.data?.error || 'Failed to create sale');
+      throw error;
+    }
+  };
+
+  const updateSale = async (id: string, sale: Partial<Sale>) => {
+    try {
+      const response = await salesAPI.update(id, sale as Record<string, unknown>);
+      const updatedSale = toCamelCase(response.data.data || response.data) as Sale;
+      setSales(sales.map((s) => (s.id === id ? updatedSale : s)));
+
+      // Refresh products to update stock in case items were changed
+      await fetchProducts();
+
+      toast.success('Sale updated successfully', { position: 'top-right' });
+    } catch (error) {
+      const axiosError = error as AxiosError<{ error?: string }>;
+      console.error('Failed to update sale:', axiosError);
+      toast.error(axiosError.response?.data?.error || 'Failed to update sale', { position: 'top-right' });
+      throw error;
+    }
+  };
+
+  const getSaleById = async (id: string): Promise<Sale> => {
+    try {
+      const response = await salesAPI.getById(id);
+      return toCamelCase(response.data.data || response.data) as Sale;
+    } catch (error) {
+      const axiosError = error as AxiosError;
+      console.error('Failed to fetch sale:', axiosError);
+      toast.error('Failed to load sale details', { position: 'top-right' });
       throw error;
     }
   };
@@ -176,11 +210,37 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const response = await purchaseAPI.create(purchase as Record<string, unknown>);
       const newPurchase = toCamelCase(response.data.data || response.data) as Purchase;
       setPurchases([newPurchase, ...purchases]);
-      toast.success('Purchase added successfully');
+      toast.success('Purchase added successfully', { position: 'top-right' });
     } catch (error) {
       const axiosError = error as AxiosError<{ error?: string }>;
       console.error('Failed to add purchase:', axiosError);
-      toast.error(axiosError.response?.data?.error || 'Failed to add purchase');
+      toast.error(axiosError.response?.data?.error || 'Failed to add purchase', { position: 'top-right' });
+      throw error;
+    }
+  };
+
+  const updatePurchase = async (id: string, purchase: Partial<Purchase>) => {
+    try {
+      const response = await purchaseAPI.update(id, purchase as Record<string, unknown>);
+      const updatedPurchase = toCamelCase(response.data.data || response.data) as Purchase;
+      setPurchases(purchases.map((p) => (p.id === id ? updatedPurchase : p)));
+      toast.success('Purchase updated successfully', { position: 'top-right' });
+    } catch (error) {
+      const axiosError = error as AxiosError<{ error?: string }>;
+      console.error('Failed to update purchase:', axiosError);
+      toast.error(axiosError.response?.data?.error || 'Failed to update purchase', { position: 'top-right' });
+      throw error;
+    }
+  };
+
+  const getPurchaseById = async (id: string): Promise<Purchase> => {
+    try {
+      const response = await purchaseAPI.getById(id);
+      return toCamelCase(response.data.data || response.data) as Purchase;
+    } catch (error) {
+      const axiosError = error as AxiosError;
+      console.error('Failed to fetch purchase:', axiosError);
+      toast.error('Failed to load purchase details', { position: 'top-right' });
       throw error;
     }
   };
@@ -212,8 +272,12 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         deleteProduct,
         fetchSales,
         addSale,
+        updateSale,
+        getSaleById,
         fetchPurchases,
         addPurchase,
+        getPurchaseById,
+        updatePurchase,
         fetchDashboardMetrics,
       }}
     >

@@ -30,15 +30,15 @@ export default function Accounts() {
 
   const customerOutstanding = useMemo(() => {
     return sales
-      .filter(sale => sale.amountPending > 0)
+      .filter(sale => Number(sale.amountPending) > 0)
       .map(sale => ({
         id: sale.id,
         name: sale.customerName,
         mobile: sale.customerMobile,
         invoiceNumber: sale.invoiceNumber,
-        totalAmount: sale.totalAmount,
-        amountReceived: sale.amountReceived,
-        amountPending: sale.amountPending,
+        totalAmount: Number(sale.totalAmount || 0),
+        amountReceived: Number(sale.amountReceived || 0),
+        amountPending: Number(sale.amountPending || 0),
         dueDate: sale.dueDate,
         createdAt: sale.createdAt,
         status: sale.status,
@@ -48,14 +48,14 @@ export default function Accounts() {
 
   const supplierOutstanding = useMemo(() => {
     return purchases
-      .filter(purchase => purchase.amountPending > 0)
+      .filter(purchase => Number(purchase.amountPending) > 0)
       .map(purchase => ({
         id: purchase.id,
         name: purchase.supplierName,
         invoiceNumber: purchase.invoiceNumber,
-        totalAmount: purchase.totalAmount,
-        amountPaid: purchase.amountPaid,
-        amountPending: purchase.amountPending,
+        totalAmount: Number(purchase.totalAmount || 0),
+        amountPaid: Number(purchase.amountPaid || 0),
+        amountPending: Number(purchase.amountPending || 0),
         dueDate: purchase.dueDate,
         createdAt: purchase.createdAt,
         status: purchase.status,
@@ -64,7 +64,7 @@ export default function Accounts() {
   }, [purchases]);
 
   const filteredCustomers = customerOutstanding.filter(item => {
-    const matchesSearch = 
+    const matchesSearch =
       item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       item.invoiceNumber.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === 'all' || item.status === statusFilter;
@@ -72,7 +72,7 @@ export default function Accounts() {
   });
 
   const filteredSuppliers = supplierOutstanding.filter(item => {
-    const matchesSearch = 
+    const matchesSearch =
       item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       item.invoiceNumber.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === 'all' || item.status === statusFilter;

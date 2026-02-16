@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -20,15 +21,15 @@ export default function Login() {
     e.preventDefault();
     setError('');
     setLoading(true);
+    const result: any = await login(username, password);
 
-    const result:any = await login(username, password);
-    
     if (result.success) {
+      toast.success('Login successful!');
       navigate('/dashboard');
     } else {
-      setError(result.message);
+      toast.error(result.message || 'Login failed', { position: "top-right" });
     }
-    
+
     setLoading(false);
   };
 
@@ -48,7 +49,7 @@ export default function Login() {
                 <AlertDescription>{error}</AlertDescription>
               </Alert>
             )}
-            
+
             <div className="space-y-2">
               <Label htmlFor="username">Username</Label>
               <div className="relative">

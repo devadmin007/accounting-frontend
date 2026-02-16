@@ -29,11 +29,14 @@ export const formatDateTime = (date: string): string => {
 
 // Sales calculations
 export const calculateSalesMetrics = (sales: Sale[], dateRange?: DateRange) => {
-  const filteredSales = dateRange ? sales.filter((sale) => isDateInRange(sale.createdAt, dateRange)) : sales;
 
-  const totalSelling = filteredSales.reduce((sum, sale) => sum + sale.totalAmount, 0);
-  const totalReceived = filteredSales.reduce((sum, sale) => sum + sale.amountReceived, 0);
-  const totalPending = filteredSales.reduce((sum, sale) => sum + sale.amountPending, 0);
+  const filteredSales = dateRange
+    ? sales.filter(sale => isDateInRange(sale.createdAt, dateRange))
+    : sales;
+
+  const totalSelling = filteredSales.reduce((sum, sale) => sum + Number(sale.totalAmount || 0), 0);
+  const totalReceived = filteredSales.reduce((sum, sale) => sum + Number(sale.amountReceived || 0), 0);
+  const totalPending = filteredSales.reduce((sum, sale) => sum + Number(sale.amountPending || 0), 0);
   const totalOnline = filteredSales.reduce((sum, sale) => {
     if (sale.paymentMode === "ONLINE") return sum + sale.amountReceived;
     if (sale.paymentMode === "MIXED") return sum + (sale.onlineAmount || 0);
@@ -42,6 +45,9 @@ export const calculateSalesMetrics = (sales: Sale[], dateRange?: DateRange) => {
   const totalCash = filteredSales.reduce((sum, sale) => {
     if (sale.paymentMode === "CASH") return sum + sale.amountReceived;
     if (sale.paymentMode === "MIXED") return sum + (sale.cashAmount || 0);
+
+    if (sale.paymentMode === 'ONLINE') return sum + Number(sale.amountReceived || 0);
+    if (sale.paymentMode === 'MIXED') return sum + Number(sale.onlineAmount || 0);
     return sum;
   }, 0);
 
@@ -52,9 +58,9 @@ export const calculateSalesMetrics = (sales: Sale[], dateRange?: DateRange) => {
 export const calculatePurchaseMetrics = (purchases: Purchase[], dateRange?: DateRange) => {
   const filteredPurchases = dateRange ? purchases.filter((purchase) => isDateInRange(purchase.createdAt, dateRange)) : purchases;
 
-  const totalPurchase = filteredPurchases.reduce((sum, purchase) => sum + purchase.totalAmount, 0);
-  const totalPaid = filteredPurchases.reduce((sum, purchase) => sum + purchase.amountPaid, 0);
-  const totalPending = filteredPurchases.reduce((sum, purchase) => sum + purchase.amountPending, 0);
+  const totalPurchase = filteredPurchases.reduce((sum, purchase) => sum + Number(purchase.totalAmount || 0), 0);
+  const totalPaid = filteredPurchases.reduce((sum, purchase) => sum + Number(purchase.amountPaid || 0), 0);
+  const totalPending = filteredPurchases.reduce((sum, purchase) => sum + Number(purchase.amountPending || 0), 0);
 
   return { totalPurchase, totalPaid, totalPending };
 };
@@ -80,60 +86,24 @@ export const getTopSellingProduct = (sales: Sale[], products: Product[], dateRan
 };
 
 // Dashboard metrics
-export function getDashboardMetrics(sales: any[] = [], purchases: any[] = [], products: any[] = [], dateRange: { from: Date; to: Date }) {
-  const from = new Date(dateRange.from);
-  const to = new Date(dateRange.to);
-
-  // Filter sales by date
-  const filteredSales = sales.filter((sale) => {
-    const saleDate = new Date(sale.date);
-    return saleDate >= from && saleDate <= to;
-  });
-
-  // Filter purchases by date
-  const filteredPurchases = purchases.filter((purchase) => {
-    const purchaseDate = new Date(purchase.date);
-    return purchaseDate >= from && purchaseDate <= to;
-  });
-
-  // TOTAL SELLING
-  const totalSelling = filteredSales.reduce((sum, sale) => sum + Number(sale.total || sale.amount || 0), 0);
-
-  // TOTAL PURCHASE
-  const totalPurchase = filteredPurchases.reduce((sum, purchase) => sum + Number(purchase.total || purchase.amount || 0), 0);
-
-  // CASH RECEIVED
-  const totalCashReceived = filteredSales.filter((sale) => sale.paymentMode === "cash").reduce((sum, sale) => sum + Number(sale.total || sale.amount || 0), 0);
-
-  // ONLINE RECEIVED
-  const totalOnlineReceived = filteredSales.filter((sale) => sale.paymentMode === "online").reduce((sum, sale) => sum + Number(sale.total || sale.amount || 0), 0);
-
-  // TOP SELLING PRODUCT
-  const productMap: Record<string, number> = {};
-
-  filteredSales.forEach((sale) => {
-    sale.items?.forEach((item: any) => {
-      const qty = Number(item.quantity || 0);
-      productMap[item.productName] = (productMap[item.productName] || 0) + qty;
-    });
-  });
-
-  let topSellingProduct = null;
-
-  const entries = Object.entries(productMap);
-  if (entries.length > 0) {
-    const [name, quantity] = entries.sort((a, b) => b[1] - a[1])[0];
-    topSellingProduct = { name, quantity };
-  }
+export const getDashboardMetrics = (
+  sales: Sale[],
+  purchases: Purchase[],
+  products: Product[],
+  dateRange?: DateRange
+): DashboardMetrics => {
+  const salesMetrics = calculateSalesMetrics(sales, dateRange);
+  const purchaseMetrics = calculatePurchaseMetrics(purchases, dateRange);
+  const topProduct = getTopSellingProduct(sales, products, dateRange);
 
   return {
-    totalSelling: Number(totalSelling) || 0,
-    totalPurchase: Number(totalPurchase) || 0,
-    totalCashReceived: Number(totalCashReceived) || 0,
-    totalOnlineReceived: Number(totalOnlineReceived) || 0,
-    topSellingProduct,
+    totalSelling: salesMetrics.totalSelling,
+    totalPurchase: purchaseMetrics.totalPurchase,
+    totalOnlineReceived: salesMetrics.totalOnline,
+    totalCashReceived: salesMetrics.totalCash,
+    topSellingProduct: topProduct,
   };
-}
+};
 
 // Low stock products
 export const getLowStockProducts = (products: Product[], threshold: number = 10): Product[] => {

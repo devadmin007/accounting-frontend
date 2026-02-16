@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Search } from 'lucide-react';
+import { Plus, Search, Edit } from 'lucide-react';
 import { formatCurrency, formatDateTime, exportToCSV, calculateOverdueDays } from '@/lib/utils-data';
 import {
   Table,
@@ -30,12 +30,12 @@ export default function Purchases() {
   const [statusFilter, setStatusFilter] = useState<string>('all');
 
   const filteredPurchases = purchases.filter(purchase => {
-    const matchesSearch = 
+    const matchesSearch =
       purchase.supplierName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       purchase.invoiceNumber.toLowerCase().includes(searchTerm.toLowerCase());
-    
+
     const matchesStatus = statusFilter === 'all' || purchase.status === statusFilter;
-    
+
     return matchesSearch && matchesStatus;
   }).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
@@ -111,6 +111,7 @@ export default function Purchases() {
                 <TableHead>Purchase Date</TableHead>
                 <TableHead>Due Date</TableHead>
                 <TableHead>Overdue</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -122,8 +123,8 @@ export default function Purchases() {
                 </TableRow>
               ) : (
                 filteredPurchases.map((purchase) => {
-                  const overdueDays = purchase.amountPending > 0 && purchase.dueDate 
-                    ? calculateOverdueDays(purchase.dueDate) 
+                  const overdueDays = purchase.amountPending > 0 && purchase.dueDate
+                    ? calculateOverdueDays(purchase.dueDate)
                     : 0;
 
                   return (
@@ -140,8 +141,8 @@ export default function Purchases() {
                         <Badge
                           variant={
                             purchase.status === 'PAID' ? 'default' :
-                            purchase.status === 'PARTIAL' ? 'secondary' :
-                            'destructive'
+                              purchase.status === 'PARTIAL' ? 'secondary' :
+                                'destructive'
                           }
                         >
                           {purchase.status}
@@ -155,6 +156,15 @@ export default function Purchases() {
                         {overdueDays > 0 && (
                           <Badge variant="destructive">{overdueDays} days</Badge>
                         )}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => navigate(`/purchases/edit/${purchase.id}`)}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
                       </TableCell>
                     </TableRow>
                   );
