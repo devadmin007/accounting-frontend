@@ -38,16 +38,13 @@ export const calculateSalesMetrics = (sales: Sale[], dateRange?: DateRange) => {
   const totalReceived = filteredSales.reduce((sum, sale) => sum + Number(sale.amountReceived || 0), 0);
   const totalPending = filteredSales.reduce((sum, sale) => sum + Number(sale.amountPending || 0), 0);
   const totalOnline = filteredSales.reduce((sum, sale) => {
-    if (sale.paymentMode === "ONLINE") return sum + sale.amountReceived;
-    if (sale.paymentMode === "MIXED") return sum + (sale.onlineAmount || 0);
+    if (sale.paymentMode === "ONLINE") return sum + Number(sale.amountReceived || 0);
+    if (sale.paymentMode === "MIXED") return sum + Number(sale.onlineAmount || 0);
     return sum;
   }, 0);
   const totalCash = filteredSales.reduce((sum, sale) => {
-    if (sale.paymentMode === "CASH") return sum + sale.amountReceived;
-    if (sale.paymentMode === "MIXED") return sum + (sale.cashAmount || 0);
-
-    if (sale.paymentMode === 'ONLINE') return sum + Number(sale.amountReceived || 0);
-    if (sale.paymentMode === 'MIXED') return sum + Number(sale.onlineAmount || 0);
+    if (sale.paymentMode === "CASH") return sum + Number(sale.amountReceived || 0);
+    if (sale.paymentMode === "MIXED") return sum + Number(sale.cashAmount || 0);
     return sum;
   }, 0);
 
